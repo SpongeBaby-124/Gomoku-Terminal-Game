@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0,<70.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gomoku-terminal"
+version = "1.0.1"
+description = "A terminal-based Gomoku (Five in a Row) game with AI opponents and keyboard control"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["game", "gomoku", "terminal", "ai", "curses"]
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Games/Entertainment :: Board Games",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Environment :: Console :: Curses",
+]
+
+dependencies = [
+    "windows-curses>=2.3.0; platform_system=='Windows'",
+]
+
+[project.urls]
+Homepage = "https://github.com/SpongeBaby-124/Gomoku-Terminal-Game"
+Repository = "https://github.com/SpongeBaby-124/Gomoku-Terminal-Game"
+Issues = "https://github.com/SpongeBaby-124/Gomoku-Terminal-Game/issues"
+
+[project.scripts]
+gomoku = "gomoku.__main__:main"
+
+[tool.setuptools]
+packages = ["gomoku"]
+
+[tool.setuptools.package-data]
+gomoku = ["*.txt"]
