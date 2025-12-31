@@ -9,13 +9,19 @@ class Board:
     EMPTY = 0
     BLACK = 1  # 玩家 ●
     WHITE = 2  # AI ○
-    SIZE = 25
+    SIZE = 20  # 20x20 棋盘
     
     def __init__(self):
         """初始化棋盘"""
         self.board = [[self.EMPTY for _ in range(self.SIZE)] for _ in range(self.SIZE)]
         self.last_move = None  # 记录最后一步 (row, col, player)
         self.move_count = 0
+        self.history = []  # 落子历史记录 [(row, col, player), ...]
+    
+    @property
+    def grid(self):
+        """board 的别名，用于兼容"""
+        return self.board
     
     def is_valid_move(self, row, col):
         """检查落子位置是否合法"""
@@ -30,6 +36,7 @@ class Board:
         
         self.board[row][col] = player
         self.last_move = (row, col, player)
+        self.history.append((row, col, player))  # 记录历史
         self.move_count += 1
         return True
     
@@ -154,3 +161,4 @@ class Board:
         self.board = [[self.EMPTY for _ in range(self.SIZE)] for _ in range(self.SIZE)]
         self.last_move = None
         self.move_count = 0
+        self.history = []  # 清空历史

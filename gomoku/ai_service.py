@@ -71,17 +71,30 @@ class AIServiceFactory:
             raise
 
 
-def get_ai_provider() -> tuple[Optional[AIProvider], AIConfig]:
+def get_ai_provider(
+    cli_api_key: Optional[str] = None,
+    cli_endpoint: Optional[str] = None,
+    cli_model: Optional[str] = None
+) -> tuple[Optional[AIProvider], AIConfig]:
     """
     获取AI提供商实例和配置
     
     便捷函数，用于游戏初始化
     
+    Args:
+        cli_api_key: 命令行指定的API密钥
+        cli_endpoint: 命令行指定的端点
+        cli_model: 命令行指定的模型
+    
     Returns:
         (provider, config) 元组
     """
     try:
-        config = load_ai_config()
+        config = load_ai_config(
+            cli_api_key=cli_api_key,
+            cli_endpoint=cli_endpoint,
+            cli_model=cli_model
+        )
         provider = AIServiceFactory.create_provider(config)
         return provider, config
     except Exception as e:

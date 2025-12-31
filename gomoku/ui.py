@@ -221,59 +221,120 @@ class GomokuUI:
         """绘制聊天区域"""
         chat_height = board_size + 5
         
-        # 绘制边框
-        border_char = "│" if self.use_unicode else "|"
-        top_border = "┌" + "─" * (self.chat_width - 2) + "┐" if self.use_unicode else "+" + "-" * (self.chat_width - 2) + "+"
-        bottom_border = "└" + "─" * (self.chat_width - 2) + "┘" if self.use_unicode else "+" + "-" * (self.chat_width - 2) + "+"
+        # 定义边框字符
+        if self.use_unicode:
+            border_h = "─"
+            border_v = "│"
+            corner_tl = "┌"
+            corner_tr = "┐"
+            corner_bl = "└"
+            corner_br = "┘"
+            tee_l = "├"
+            tee_r = "┤"
+        else:
+            border_h = "-"
+            border_v = "|"
+            corner_tl = "+"
+            corner_tr = "+"
+            corner_bl = "+"
+            corner_br = "+"
+            tee_l = "+"
+            tee_r = "+"
         
-        # 顶部边框
-        self.safe_addstr(1, self.chat_start_x, top_border, curses.color_pair(self.COLOR_CHAT_BORDER))
-        
-        # 标题
-        chat_title = " 💬 AI Chat " if self.use_unicode else " AI Chat "
-        title_x = self.chat_start_x + (self.chat_width - len(chat_title)) // 2
-        self.safe_addstr(1, title_x, chat_title, curses.color_pair(self.COLOR_TITLE) | curses.A_BOLD)
-        
-        # 左右边框和消息区域
         msg_area_height = chat_height - 5
-        for i in range(msg_area_height):
-            self.safe_addstr(2 + i, self.chat_start_x, border_char, curses.color_pair(self.COLOR_CHAT_BORDER))
-            self.safe_addstr(2 + i, self.chat_start_x + self.chat_width - 1, border_char, curses.color_pair(self.COLOR_CHAT_BORDER))
         
-        # 绘制消息
+        # 第一步：清除整个聊天区域（使用 clrtoeol）
+        for i in range(msg_area_height + 4):  # +4 包括标题、分隔线、输入行、底边框
+            y = 1 + i
+            try:
+                self.stdscr.move(y, self.chat_start_x)
+                self.stdscr.clrtoeol()
+            except curses.error:
+                pass
+        
+        # 第二步：绘制消息内容
         self._draw_chat_messages(msg_area_height)
         
-        # 分隔线
-        sep_y = 2 + msg_area_height
-        sep_line = "├" + "─" * (self.chat_width - 2) + "┤" if self.use_unicode else "+" + "-" * (self.chat_width - 2) + "+"
-        self.safe_addstr(sep_y, self.chat_start_x, sep_line, curses.color_pair(self.COLOR_CHAT_BORDER))
-        
-        # 输入区域
-        input_y = sep_y + 1
-        self.safe_addstr(input_y, self.chat_start_x, border_char, curses.color_pair(self.COLOR_CHAT_BORDER))
-        self.safe_addstr(input_y, self.chat_start_x + self.chat_width - 1, border_char, curses.color_pair(self.COLOR_CHAT_BORDER))
-        
-        # 输入提示或AI状态
+        # 第三步：绘制输入区域内容
+        input_y = 2 + msg_area_height + 1  # 分隔线下面一行
         if self.ai_typing:
             prompt = " AI typing..."
             self.safe_addstr(input_y, self.chat_start_x + 1, prompt, curses.color_pair(self.COLOR_CHAT_AI))
         elif self.input_mode == InputMode.CHAT:
-            # 显示输入内容
             prompt = "> "
+            prompt_width = 2
             max_input_width = self.chat_width - 4
-            display_text = self.chat_input_buffer[-max_input_width:] if len(self.chat_input_buffer) > max_input_width else self.chat_input_buffer
+            
+            display_text = self.chat_input_buffer
+            current_width = 0
+            start_index = len(display_text)
+            for i in range(len(display_text) - 1, -1, -1):
+                char_width = self._get_char_width(display_text[i])
+                if current_width + char_width > max_input_width:
+                    break
+                current_width += char_width
+                start_index = i
+            
+            display_text = display_text[start_index:]
             self.safe_addstr(input_y, self.chat_start_x + 1, prompt + display_text, curses.color_pair(self.COLOR_INPUT) | curses.A_BOLD)
-            # 显示光标
-            cursor_x = self.chat_start_x + 1 + len(prompt) + len(display_text)
+            
+            cursor_x = self.chat_start_x + 1 + prompt_width + current_width
             if cursor_x < self.chat_start_x + self.chat_width - 1:
                 self.safe_addstr(input_y, cursor_x, "_", curses.color_pair(self.COLOR_INPUT) | curses.A_BLINK)
         else:
             hint = " Press C to chat"
             self.safe_addstr(input_y, self.chat_start_x + 1, hint, curses.color_pair(self.COLOR_BOARD))
         
+        # 第四步：最后绘制所有边框（确保不被内容覆盖）
+        # 顶部边框
+        top_border = corner_tl + border_h * (self.chat_width - 2) + corner_tr
+        self.safe_addstr(1, self.chat_start_x, top_border, curses.color_pair(self.COLOR_CHAT_BORDER))
+        
+        # 标题（覆盖部分顶部边框）
+        chat_title = " 💬 AI Chat " if self.use_unicode else " AI Chat "
+        title_x = self.chat_start_x + (self.chat_width - len(chat_title)) // 2
+        self.safe_addstr(1, title_x, chat_title, curses.color_pair(self.COLOR_TITLE) | curses.A_BOLD)
+        
+        # 左右边框
+        for i in range(msg_area_height):
+            y = 2 + i
+            self.safe_addstr(y, self.chat_start_x, border_v, curses.color_pair(self.COLOR_CHAT_BORDER))
+            self.safe_addstr(y, self.chat_start_x + self.chat_width - 1, border_v, curses.color_pair(self.COLOR_CHAT_BORDER))
+        
+        # 分隔线
+        sep_y = 2 + msg_area_height
+        sep_line = tee_l + border_h * (self.chat_width - 2) + tee_r
+        self.safe_addstr(sep_y, self.chat_start_x, sep_line, curses.color_pair(self.COLOR_CHAT_BORDER))
+        
+        # 输入区域边框
+        self.safe_addstr(input_y, self.chat_start_x, border_v, curses.color_pair(self.COLOR_CHAT_BORDER))
+        self.safe_addstr(input_y, self.chat_start_x + self.chat_width - 1, border_v, curses.color_pair(self.COLOR_CHAT_BORDER))
+        
         # 底部边框
+        bottom_border = corner_bl + border_h * (self.chat_width - 2) + corner_br
         self.safe_addstr(input_y + 1, self.chat_start_x, bottom_border, curses.color_pair(self.COLOR_CHAT_BORDER))
     
+    def _get_char_width(self, char):
+        """获取字符的显示宽度"""
+        import unicodedata
+        # 'F' (Fullwidth), 'W' (Wide), 'A' (Ambiguous) 通常视为2
+        # 'N' (Neutral), 'Na' (Narrow), 'H' (Halfwidth) 视为1
+        # 注意：Ambiguous 在某些终端可能是1，但在中文环境通常是2
+        w = unicodedata.east_asian_width(char)
+        return 2 if w in ('F', 'W', 'A') else 1
+
+    def _truncate_text(self, text, max_width):
+        """按显示宽度截断文本"""
+        width = 0
+        result = ""
+        for char in text:
+            char_width = self._get_char_width(char)
+            if width + char_width > max_width:
+                break
+            width += char_width
+            result += char
+        return result, width
+
     def _draw_chat_messages(self, area_height: int):
         """绘制聊天消息"""
         if not self.chat_messages:
@@ -306,9 +367,18 @@ class GomokuUI:
         for i, (line, color) in enumerate(display_lines):
             y = 2 + i
             x = self.chat_start_x + 1
-            max_len = self.chat_width - 3
-            display_text = line[:max_len]
+            max_len = self.chat_width - 3  # 边框内的可用宽度
+            
+            # 使用宽度感知的截断
+            display_text, text_width = self._truncate_text(line, max_len)
+            
+            # 绘制文本
             self.safe_addstr(y, x, display_text, curses.color_pair(color))
+            
+            # 清除剩余的空间（非常重要，否则会有残留）
+            remaining_space = max_len - text_width
+            if remaining_space > 0:
+                self.safe_addstr(y, x + text_width, " " * remaining_space, curses.color_pair(self.COLOR_BOARD))
     
     def update_chat_messages(self, messages: List[Tuple[str, List[str]]]):
         """更新聊天消息"""
@@ -327,7 +397,12 @@ class GomokuUI:
     def set_input_mode(self, mode: InputMode):
         """设置输入模式"""
         self.input_mode = mode
-        if mode == InputMode.GAME:
+        if mode == InputMode.CHAT:
+            # 聊天模式：使用阻塞式输入，避免刷新干扰打字
+            self.stdscr.timeout(-1)
+        else:
+            # 游戏模式：恢复非阻塞输入
+            self.stdscr.timeout(100)
             self.chat_input_buffer = ""
     
     def get_input_mode(self) -> InputMode:

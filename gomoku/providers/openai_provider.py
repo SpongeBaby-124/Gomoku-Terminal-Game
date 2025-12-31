@@ -71,11 +71,18 @@ class OpenAIProvider(AIProvider):
         board: List[List[int]],
         current_player: int,
         history: List[Tuple[int, int, int]],
-        board_size: int = 15
+        board_size: int = 20,
+        suggested_move: Optional[Tuple[int, int]] = None,
+        user_instruction: Optional[str] = None
     ) -> AIMove:
         """获取AI的下一步落子"""
         prompt = PromptBuilder.build_move_prompt(
-            board, current_player, history, board_size
+            board=board,
+            current_player=current_player,
+            history=history,
+            board_size=board_size,
+            suggested_move=suggested_move,
+            user_instruction=user_instruction
         )
         
         for attempt in range(self.config.max_retries):
@@ -136,12 +143,16 @@ class OpenAIProvider(AIProvider):
         message: str,
         chat_history: List[ChatMessage],
         board: Optional[List[List[int]]] = None,
-        current_player: Optional[int] = None
+        current_player: Optional[int] = None,
+        board_history: Optional[List[Tuple[int, int, int]]] = None
     ) -> ChatResponse:
         """与AI进行对话"""
         try:
             system_prompt = PromptBuilder.build_chat_prompt(
-                board, current_player
+                board=board,
+                current_player=current_player,
+                history=board_history,
+                board_size=20
             )
             
             messages = [{"role": "system", "content": system_prompt}]
