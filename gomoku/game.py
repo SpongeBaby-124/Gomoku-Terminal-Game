@@ -308,7 +308,7 @@ class GomokuGame:
                 response = self.ai_provider.chat(
                     message=message,
                     chat_history=self.chat_manager.get_history()[:-1],  # 不包含刚添加的消息
-                    board=self.board.grid,
+                    board=self.board.board,
                     current_player=self.current_player
                 )
                 
