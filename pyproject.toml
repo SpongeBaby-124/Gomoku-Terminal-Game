@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gomoku-terminal"
-version = "1.0.1"
+version = "1.0.2"
 description = "A terminal-based Gomoku (Five in a Row) game with AI opponents and keyboard control"
 readme = "README.md"
 requires-python = ">=3.8"
